@@ -1,0 +1,107 @@
+{
+  "format": "canvas-content/v0",
+  "title": "Karpathy 的 autoresearch 循环",
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "agent",
+      "label": "Agent\nClaude、Codex 等",
+      "shape": "rect",
+      "role": "agent"
+    },
+    {
+      "id": "step1",
+      "label": "试一个想法\n改 train.py",
+      "shape": "rect",
+      "role": "step"
+    },
+    {
+      "id": "step2",
+      "label": "提交\ngit commit",
+      "shape": "rect",
+      "role": "step"
+    },
+    {
+      "id": "step3",
+      "label": "训练 5 分钟\nuv run train.py > run.log",
+      "shape": "rect",
+      "role": "step"
+    },
+    {
+      "id": "step4",
+      "label": "读分数\ngrep val_bpb run.log",
+      "shape": "rect",
+      "role": "step"
+    },
+    {
+      "id": "decide",
+      "label": "val_bpb 降了吗？",
+      "shape": "diamond",
+      "role": "decision"
+    },
+    {
+      "id": "keep",
+      "label": "保留\n分支往前走一步",
+      "shape": "rect",
+      "role": "keep"
+    },
+    {
+      "id": "reset",
+      "label": "git reset\n退回上一个好的提交",
+      "shape": "rect",
+      "role": "reset"
+    },
+    {
+      "id": "log",
+      "label": "记一行\nresults.tsv",
+      "shape": "rect",
+      "role": "step"
+    }
+  ],
+  "edges": [
+    {
+      "from": "agent",
+      "to": "step1"
+    },
+    {
+      "from": "step1",
+      "to": "step2"
+    },
+    {
+      "from": "step2",
+      "to": "step3"
+    },
+    {
+      "from": "step3",
+      "to": "step4"
+    },
+    {
+      "from": "step4",
+      "to": "decide"
+    },
+    {
+      "from": "decide",
+      "to": "keep",
+      "label": "降了"
+    },
+    {
+      "from": "decide",
+      "to": "reset",
+      "label": "没降"
+    },
+    {
+      "from": "keep",
+      "to": "log"
+    },
+    {
+      "from": "reset",
+      "to": "log"
+    },
+    {
+      "from": "log",
+      "to": "step1",
+      "label": "一直循环"
+    }
+  ],
+  "notes": "val_bpb 是模型在验证集上每个字节平均要用的比特数，越低越好。每轮训练都只跑 5 分钟，所以各轮的分数可以直接比。"
+}

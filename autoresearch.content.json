@@ -1,0 +1,280 @@
+{
+  "format": "canvas-content/v0",
+  "title": "Karpathy 的 autoresearch 循环",
+  "subtitle": "让 Agent 自己改代码、跑训练、看分数，一轮接一轮",
+  "theme": "book",
+  "meta": {
+    "指标": "val_bpb，越低越好",
+    "每轮训练": "5 分钟",
+    "能改的文件": "只有 train.py",
+    "记录": "results.tsv"
+  },
+  "direction": "TB",
+  "groups": [
+    {
+      "id": "question",
+      "title": "要改进的目标",
+      "subtitle": "val_bpb 越低越好",
+      "role": "agent",
+      "members": [
+        "goal",
+        "agent"
+      ]
+    },
+    {
+      "id": "premises",
+      "title": "谁能动哪个文件",
+      "subtitle": "人写规则，Agent 只改一个",
+      "role": "editable",
+      "members": [
+        "human",
+        "editable",
+        "locked"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "title": "一轮实验怎么跑",
+      "subtitle": "改、提交、训练、读分",
+      "role": "step",
+      "members": [
+        "step1",
+        "step2",
+        "step3",
+        "step4"
+      ]
+    },
+    {
+      "id": "conclude",
+      "title": "留下还是退回",
+      "subtitle": "每一轮都记一笔",
+      "role": "decision",
+      "members": [
+        "decide",
+        "keep",
+        "reset",
+        "log",
+        "crash"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "goal",
+      "label": "目标\n让 val_bpb 变低",
+      "role": "agent"
+    },
+    {
+      "id": "agent",
+      "label": "Agent\nClaude、Codex 等",
+      "role": "agent"
+    },
+    {
+      "id": "human",
+      "label": "program.md\n人写目标和规则",
+      "role": "human"
+    },
+    {
+      "id": "editable",
+      "label": "train.py\nAgent 唯一能改的",
+      "role": "editable"
+    },
+    {
+      "id": "locked",
+      "label": "prepare.py\n数据和评测，不许动",
+      "role": "locked"
+    },
+    {
+      "id": "step1",
+      "label": "试一个想法\n改 train.py",
+      "role": "step"
+    },
+    {
+      "id": "step2",
+      "label": "提交\ngit commit",
+      "role": "step"
+    },
+    {
+      "id": "step3",
+      "label": "训练 5 分钟\nuv run train.py",
+      "role": "step"
+    },
+    {
+      "id": "step4",
+      "label": "读分数\ngrep val_bpb",
+      "role": "step"
+    },
+    {
+      "id": "decide",
+      "label": "val_bpb 降了吗？",
+      "shape": "diamond",
+      "role": "decision"
+    },
+    {
+      "id": "keep",
+      "label": "保留\n分支往前走一步",
+      "role": "keep"
+    },
+    {
+      "id": "reset",
+      "label": "git reset\n退回上一个好结果",
+      "role": "reset"
+    },
+    {
+      "id": "log",
+      "label": "记一行\nresults.tsv",
+      "role": "step"
+    },
+    {
+      "id": "crash",
+      "label": "训练崩了\n看 run.log 末尾",
+      "role": "dashed"
+    }
+  ],
+  "edges": [
+    {
+      "from": "goal",
+      "to": "agent",
+      "style": "invisible"
+    },
+    {
+      "from": "human",
+      "to": "editable",
+      "style": "invisible"
+    },
+    {
+      "from": "editable",
+      "to": "locked",
+      "style": "invisible"
+    },
+    {
+      "from": "agent",
+      "to": "step1",
+      "label": "开始一轮"
+    },
+    {
+      "from": "agent",
+      "to": "editable",
+      "label": "只改这里",
+      "style": "dashed"
+    },
+    {
+      "from": "step1",
+      "to": "step2"
+    },
+    {
+      "from": "step2",
+      "to": "step3"
+    },
+    {
+      "from": "step3",
+      "to": "step4"
+    },
+    {
+      "from": "step4",
+      "to": "decide"
+    },
+    {
+      "from": "decide",
+      "to": "keep",
+      "label": "降了"
+    },
+    {
+      "from": "decide",
+      "to": "reset",
+      "label": "没降"
+    },
+    {
+      "from": "keep",
+      "to": "log"
+    },
+    {
+      "from": "reset",
+      "to": "log"
+    },
+    {
+      "from": "log",
+      "to": "step1",
+      "label": "下一轮"
+    },
+    {
+      "from": "step3",
+      "to": "crash",
+      "label": "崩了",
+      "style": "dashed"
+    }
+  ],
+  "start": [
+    "goal",
+    "agent"
+  ],
+  "steps": [
+    {
+      "edge": "agent->step1",
+      "caption": "Agent 的目标是让 val_bpb 变低，也就是验证集上每个字节平均要用的比特数。"
+    },
+    {
+      "edge": "agent->editable",
+      "caption": "它只能改 train.py，评测用的 prepare.py 碰不到，没法靠改裁判来刷分。"
+    },
+    {
+      "edge": "step1->step2",
+      "caption": "先在 train.py 里试一个想法，再提交一次，出错时好退回。"
+    },
+    {
+      "edge": "step2->step3",
+      "caption": "训练固定只跑 5 分钟，输出都写进 run.log。"
+    },
+    {
+      "edge": "step3->crash",
+      "optional": true,
+      "caption": "训练也可能崩掉。这时看 run.log 的最后几行，能修就修，修不了就记作 crash。"
+    },
+    {
+      "edge": "step3->step4",
+      "caption": "训练跑完，从 run.log 里把 val_bpb 找出来。"
+    },
+    {
+      "edge": "step4->decide",
+      "caption": "拿这个分数和目前最好的成绩比一比。"
+    },
+    {
+      "edges": [
+        "decide->keep",
+        "decide->reset"
+      ],
+      "focus": [
+        "keep",
+        "reset"
+      ],
+      "caption": "降了就保留这次提交；没降就 git reset，回到上一个好结果。"
+    },
+    {
+      "edges": [
+        "keep->log",
+        "reset->log"
+      ],
+      "focus": "log",
+      "caption": "不管保留还是退回，都在 results.tsv 里记一行。"
+    },
+    {
+      "edge": "log->step1",
+      "caption": "记完马上开始下一轮，中间不用人插手。"
+    }
+  ],
+  "notes": "每次训练都只给 5 分钟，所以不同想法的分数可以直接放在一起比：谁在同样的时间里把 val_bpb 降得更多，谁就更好。",
+  "rules": [
+    {
+      "rule": "program.md 由人来写",
+      "practice": "Agent 只能改人在里面列为可改的文件。"
+    },
+    {
+      "rule": "分数说了算",
+      "practice": "只有 val_bpb 降了才保留改动，否则 git reset。"
+    },
+    {
+      "rule": "一直循环",
+      "practice": "保留或退回之后，马上开始下一次修改，中间不用人插手。"
+    }
+  ]
+}

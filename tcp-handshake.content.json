@@ -1,0 +1,139 @@
+{
+  "format": "canvas-content/v0",
+  "title": "TCP 三次握手",
+  "subtitle": "建立连接前，两边要互相确认对方收到了自己的起始序号",
+  "theme": "product",
+  "meta": {
+    "协议": "TCP",
+    "规范": "RFC 9293",
+    "握手报文": "3 个",
+    "最终状态": "ESTABLISHED"
+  },
+  "direction": "LR",
+  "lanes": [
+    {
+      "id": "client",
+      "label": "客户端",
+      "subtitle": "主动发起连接",
+      "role": "step"
+    },
+    {
+      "id": "server",
+      "label": "服务端",
+      "subtitle": "先 listen，等人来连",
+      "role": "keep"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "c_sent",
+      "lane": "client",
+      "label": "SYN_SENT\n调了 connect()，SYN 已发出",
+      "role": "step"
+    },
+    {
+      "id": "c_est",
+      "lane": "client",
+      "label": "ESTABLISHED\n客户端这边连上了",
+      "role": "keep"
+    },
+    {
+      "id": "c_data",
+      "lane": "client",
+      "label": "发请求\nGET / HTTP/1.1",
+      "role": "dashed"
+    },
+    {
+      "id": "s_listen",
+      "lane": "server",
+      "label": "LISTEN\n调了 listen()，等连接",
+      "role": "step"
+    },
+    {
+      "id": "s_rcvd",
+      "lane": "server",
+      "label": "SYN_RCVD\n收到了 SYN",
+      "role": "step"
+    },
+    {
+      "id": "s_est",
+      "lane": "server",
+      "label": "ESTABLISHED\n服务端这边也连上了",
+      "role": "keep"
+    },
+    {
+      "id": "s_data",
+      "lane": "server",
+      "label": "回响应\nHTTP/1.1 200 OK",
+      "role": "dashed"
+    }
+  ],
+  "edges": [
+    {
+      "from": "c_sent",
+      "to": "s_rcvd",
+      "label": "SYN seq=x"
+    },
+    {
+      "from": "s_rcvd",
+      "to": "c_est",
+      "label": "SYN-ACK seq=y, ack=x+1"
+    },
+    {
+      "from": "c_est",
+      "to": "s_est",
+      "label": "ACK ack=y+1"
+    },
+    {
+      "from": "c_data",
+      "to": "s_data",
+      "label": "HTTP 请求"
+    },
+    {
+      "from": "s_listen",
+      "to": "s_rcvd",
+      "style": "invisible"
+    },
+    {
+      "from": "c_est",
+      "to": "c_data",
+      "style": "invisible"
+    },
+    {
+      "from": "s_est",
+      "to": "s_data",
+      "style": "invisible"
+    }
+  ],
+  "start": [
+    "c_sent",
+    "s_listen"
+  ],
+  "steps": [
+    {
+      "edge": "c_sent->s_rcvd",
+      "focus": "s_rcvd",
+      "caption": "客户端发出 SYN，告诉服务端：我的序号从 x 开始。"
+    },
+    {
+      "edge": "s_rcvd->c_est",
+      "focus": "c_est",
+      "caption": "服务端回 SYN-ACK，用 ack=x+1 表示收到了，同时报上自己的序号 y。"
+    },
+    {
+      "edge": "c_est->s_est",
+      "focus": "s_est",
+      "caption": "客户端回 ACK，用 ack=y+1 表示收到了 y。到这里两边都进入 ESTABLISHED。"
+    },
+    {
+      "edge": "c_data->s_data",
+      "focus": [
+        "c_data",
+        "s_data"
+      ],
+      "optional": true,
+      "caption": "连接建好后才开始传数据：客户端发 HTTP 请求，服务端回 200 OK。"
+    }
+  ],
+  "notes": "为什么是三次：双方都要确认对方收到了自己的起始序号。前两次只让客户端确认了这一点，第三次的 ACK 才让服务端也放心。"
+}

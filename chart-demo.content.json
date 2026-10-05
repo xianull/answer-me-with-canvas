@@ -1,0 +1,94 @@
+{
+  "format": "canvas-content/v0",
+  "title": "加了依赖缓存以后，构建快了多少",
+  "theme": "product",
+  "meta": {
+    "指标": "CI 每周构建时间",
+    "周期": "6 周",
+    "改动": "第 3 周起加依赖缓存",
+    "数据": "示例，虚构"
+  },
+  "chart": {
+    "type": "bar",
+    "title": "CI 每周构建时间（分钟）",
+    "sample": true,
+    "unit": "min",
+    "x_label": "周",
+    "y_label": "分钟",
+    "categories": [
+      "W1",
+      "W2",
+      "W3",
+      "W4",
+      "W5",
+      "W6"
+    ],
+    "series": [
+      {
+        "name": "一直不加缓存",
+        "values": [
+          14,
+          15,
+          16,
+          15,
+          17,
+          16
+        ]
+      },
+      {
+        "name": "第 3 周起加缓存",
+        "values": [
+          14,
+          15,
+          9,
+          8,
+          8,
+          7
+        ]
+      }
+    ],
+    "source": "示例数据，为演示虚构，不代表任何真实项目。"
+  },
+  "steps": [
+    {
+      "reveal": 2,
+      "caption": "前两周还没加缓存，两组柱子一样高，分别是 14 和 15 分钟。"
+    },
+    {
+      "reveal": 3,
+      "highlight": "W3",
+      "caption": "第 3 周加上依赖缓存。同一周里，不加缓存要 16 分钟，加了只要 9 分钟。"
+    },
+    {
+      "reveal": 5,
+      "caption": "第 4、5 周都是 8 分钟，说明第 3 周的提速不是偶然。"
+    },
+    {
+      "reveal": 6,
+      "highlight": "W6",
+      "caption": "到第 6 周只要 7 分钟，比不加缓存的 16 分钟少了 9 分钟。"
+    }
+  ],
+  "notes": "缓存省下的，是每次构建重新下载和安装依赖的时间。",
+  "groups": [
+    {
+      "id": "data",
+      "title": "每周构建要多久",
+      "subtitle": "两组构建各跑了 6 周",
+      "members": [
+        "@chart"
+      ],
+      "role": "step"
+    },
+    {
+      "id": "explain",
+      "title": "缓存省了多少时间",
+      "subtitle": "第 6 周少用 9 分钟",
+      "members": [
+        "@caption",
+        "@notes"
+      ],
+      "role": "keep"
+    }
+  ]
+}

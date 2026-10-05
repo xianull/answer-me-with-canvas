@@ -1,0 +1,78 @@
+{
+  "format": "canvas-content/v0",
+  "title": "修一个挂掉的测试",
+  "subtitle": "用户、Planner、Coder 和工具之间，一共传了 8 条消息",
+  "theme": "product",
+  "meta": {
+    "失败的测试": "test_login",
+    "改动": "auth.py 第 42 行",
+    "消息": "8 条",
+    "结果": "1 passed"
+  },
+  "groups": [
+    {
+      "id": "ask",
+      "title": "用户报问题",
+      "subtitle": "CI 里的测试挂了",
+      "role": "human",
+      "members": ["u_ask"]
+    },
+    {
+      "id": "clarify",
+      "title": "拆成任务",
+      "subtitle": "先说清怎样算修好",
+      "role": "agent",
+      "members": ["p_plan"]
+    },
+    {
+      "id": "deepen",
+      "title": "复现、修改、再跑",
+      "subtitle": "Coder 和工具来回",
+      "role": "step",
+      "members": ["c_task", "t_run", "c_fix", "t_rerun", "c_done"]
+    },
+    {
+      "id": "synthesize",
+      "title": "核对后答复",
+      "subtitle": "带上测试结果",
+      "role": "keep",
+      "members": ["p_check", "u_answer"]
+    }
+  ],
+  "nodes": [
+    {"id": "u_ask", "label": "用户\n「test_login 挂了」", "role": "human"},
+    {"id": "p_plan", "label": "Planner 拆任务\n复现、修复、回归", "role": "agent"},
+    {"id": "c_task", "label": "Coder 接任务\n先跑测试", "role": "step"},
+    {"id": "t_run", "label": "工具\npytest -k login", "role": "editable"},
+    {"id": "c_fix", "label": "Coder 改代码\nauth.py:42", "role": "step"},
+    {"id": "t_rerun", "label": "工具再跑\npytest -k login", "role": "editable"},
+    {"id": "c_done", "label": "Coder 汇报\n1 passed", "role": "keep"},
+    {"id": "p_check", "label": "Planner 核对\n测试确实过了", "role": "keep"},
+    {"id": "u_answer", "label": "答复用户\n附上改动和结果", "role": "keep"}
+  ],
+  "edges": [
+    {"from": "u_ask", "to": "p_plan", "label": "request"},
+    {"from": "p_plan", "to": "c_task", "label": "task"},
+    {"from": "c_task", "to": "t_run", "label": "tool_call"},
+    {"from": "t_run", "to": "c_fix", "label": "tool_result"},
+    {"from": "c_fix", "to": "t_rerun", "label": "tool_call"},
+    {"from": "t_rerun", "to": "c_done", "label": "tool_result"},
+    {"from": "c_done", "to": "p_check", "label": "report"},
+    {"from": "p_check", "to": "u_answer", "label": "answer"},
+    {"from": "c_task", "to": "c_fix", "style": "invisible"},
+    {"from": "c_fix", "to": "c_done", "style": "invisible"},
+    {"from": "t_run", "to": "t_rerun", "style": "invisible"}
+  ],
+  "start": "u_ask",
+  "steps": [
+    {"edge": "u_ask->p_plan", "caption": "用户把问题交给 Planner：CI 里的 test_login 挂了。", "detail": "{\"role\": \"user\", \"to\": \"planner\",\n \"content\": \"CI 里 test_login 挂了，帮我修一下\"}"},
+    {"edge": "p_plan->c_task", "caption": "Planner 把它拆成复现、修复、回归三步，并写明测试全过才算完。", "detail": "{\"from\": \"planner\", \"to\": \"coder\",\n \"task\": \"复现 test_login 失败，找原因并修复\",\n \"done_when\": \"pytest -k login 全过\"}"},
+    {"edge": "c_task->t_run", "caption": "Coder 先不改代码，调工具把测试跑一遍，确认真的会挂。", "detail": "tool_call: bash\n{\"command\": \"pytest -k login -x\"}"},
+    {"edge": "t_run->c_fix", "caption": "测试确实挂了：登录后本该返回 302 跳转，实际返回了 500 错误。", "detail": "tool_result (exit 1):\nFAILED tests/test_auth.py::test_login\nAssertionError: expected 302, got 500"},
+    {"edge": "c_fix->t_rerun", "caption": "原因是 auth.py 读错了 session 的键。改成 user_id 后，再跑一次同一个测试。", "detail": "edit auth.py:42\n- session.get(\"user\")\n+ session.get(\"user_id\")\ntool_call: bash\n{\"command\": \"pytest -k login\"}"},
+    {"edge": "t_rerun->c_done", "caption": "第二次跑通过了。", "detail": "tool_result (exit 0):\n1 passed in 0.41s"},
+    {"edge": "c_done->p_check", "caption": "Coder 把改动和这次的测试结果一起报给 Planner。", "detail": "{\"from\": \"coder\", \"to\": \"planner\",\n \"status\": \"done\", \"diff\": \"auth.py | 2 +-\",\n \"evidence\": \"1 passed\"}"},
+    {"edge": "p_check->u_answer", "caption": "Planner 对照最初定的完成条件核对过，才回复用户。", "detail": "{\"role\": \"assistant\", \"to\": \"user\",\n \"content\": \"已修复。auth.py 第 42 行读错了 session 的键，应该是 user_id。改完重跑 test_login，1 passed。\"}"}
+  ],
+  "notes": "Coder 改代码之前先复现了一次失败，改完又跑了同一个测试。有了前后两次结果对照，Planner 才能确认问题真的修好了。"
+}

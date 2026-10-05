@@ -1,0 +1,507 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "canvas-content/v0",
+  "title": "canvas content-only JSON v0",
+  "description": "Content only. No coordinates. A filling agent writes this; canvas lays it out, plays it step by step, and exports it.",
+  "type": "object",
+  "required": [
+    "format"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "format": {
+      "enum": [
+        "canvas-content/v0",
+        "live-draft-content/v0"
+      ],
+      "description": "live-draft-content/v0 is accepted once for old files and read as canvas-content/v0."
+    },
+    "title": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Short paragraph under the diagram."
+    },
+    "direction": {
+      "enum": [
+        "TB",
+        "TD",
+        "LR",
+        "RL",
+        "BT"
+      ],
+      "default": "TB"
+    },
+    "theme": {
+      "enum": [
+        "book",
+        "product",
+        "sketch"
+      ],
+      "default": "book",
+      "description": "Page look: book (warm paper, serif titles), product (clean cards, one indigo accent), sketch (Excalidraw-style whiteboard). Video export always uses its own 3b1b look."
+    },
+    "layout": {
+      "enum": [
+        "mermaid",
+        "lanes"
+      ],
+      "description": "Default: lanes if any lane is used, otherwise mermaid."
+    },
+    "lanes": {
+      "type": "array",
+      "description": "Optional swimlanes (e.g. Client / Server). Order = left to right.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "label": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "badge": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Badge letter override (lanes use label as the title). Default: A, B, C ..."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "description": "First line = title. Later lines (\\n) = smaller subtitle."
+          },
+          "shape": {
+            "enum": [
+              "rect",
+              "rounded",
+              "diamond",
+              "ellipse",
+              "circle"
+            ],
+            "default": "rect"
+          },
+          "role": {
+            "enum": [
+              "plain",
+              "step",
+              "decision",
+              "agent",
+              "keep",
+              "reset",
+              "human",
+              "editable",
+              "locked",
+              "dashed",
+              "caption"
+            ],
+            "default": "plain"
+          },
+          "lane": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "x"
+              ]
+            },
+            {
+              "required": [
+                "y"
+              ]
+            },
+            {
+              "required": [
+                "width"
+              ]
+            },
+            {
+              "required": [
+                "height"
+              ]
+            },
+            {
+              "required": [
+                "points"
+              ]
+            }
+          ]
+        },
+        "additionalProperties": false
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "from": {
+            "$ref": "#/$defs/id"
+          },
+          "to": {
+            "$ref": "#/$defs/id"
+          },
+          "label": {
+            "type": "string"
+          },
+          "style": {
+            "enum": [
+              "solid",
+              "dashed",
+              "thick",
+              "invisible"
+            ],
+            "default": "solid",
+            "description": "invisible = layout hint only, never drawn, never a step."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "start": {
+      "description": "Node id(s) lit before step 1. Default: the from-node of step 1.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "description": "Play order. If missing, every visible edge is one step in edges order.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "object",
+            "additionalProperties": true
+          }
+        ]
+      }
+    },
+    "chart": {
+      "type": "object",
+      "description": "Minimal data chart. The model fills labels and numbers only; canvas computes scales, ticks and positions.",
+      "required": [
+        "type",
+        "categories",
+        "series"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "bar",
+            "line"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "x_label": {
+          "type": "string"
+        },
+        "y_label": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "values"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "description": "Same length as categories. null = no data."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "sample": {
+          "type": "boolean",
+          "description": "true = shows a 示例数据 badge. Required to be true for made-up numbers."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the numbers come from, or a note that they are sample data."
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "x"
+            ]
+          },
+          {
+            "required": [
+              "y"
+            ]
+          },
+          {
+            "required": [
+              "width"
+            ]
+          },
+          {
+            "required": [
+              "height"
+            ]
+          },
+          {
+            "required": [
+              "points"
+            ]
+          },
+          {
+            "required": [
+              "scale"
+            ]
+          },
+          {
+            "required": [
+              "ticks"
+            ]
+          }
+        ]
+      },
+      "additionalProperties": false
+    },
+    "groups": {
+      "type": "array",
+      "description": "Optional titled regions. Membership only, no coordinates. A node belongs to at most one group. Members starting with @ (@chart, @caption, @notes) wrap page blocks.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "members"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "blocks": {
+            "type": "array",
+            "description": "Dense teaching-board content: callout, table, bars, flowchart, sequence, code, mermaid, list.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "tone": {
+                  "type": "string"
+                },
+                "headers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "rows": {
+                  "type": "array"
+                },
+                "items": {
+                  "type": "array"
+                },
+                "mermaid": {
+                  "type": "string"
+                },
+                "lang": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "role": {
+            "type": "string"
+          },
+          "under": {
+            "$ref": "#/$defs/id",
+            "description": "Stack this group below another group."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Badge letter override. Default: A, B, C ... in declaration order."
+          },
+          "badge": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Same as label."
+          }
+        }
+      }
+    },
+    "playback": {
+      "type": "object",
+      "description": "Optional auto-play for the display page (interval also sets the video step length). Filling agents need not write it. URL ?autoplay=1 also starts playback.",
+      "additionalProperties": false,
+      "properties": {
+        "autoplay": {
+          "type": "boolean",
+          "default": false
+        },
+        "interval_ms": {
+          "type": "integer",
+          "minimum": 300,
+          "maximum": 60000,
+          "default": 1800
+        },
+        "loop": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "orientation": {
+      "enum": [
+        "landscape",
+        "portrait"
+      ],
+      "default": "landscape",
+      "description": "Teaching-board arrangement. landscape = horizontal partitions (default); portrait = stacked column."
+    },
+    "rules": {
+      "type": "array",
+      "description": "Deprecated for HTML display: bottom rules table is not rendered. Prefer an FAQ board."
+    },
+    "display": {
+      "enum": [
+        "sheet",
+        "deck",
+        "lesson"
+      ],
+      "default": "sheet",
+      "description": "sheet = landscape drawing sheet, all boards at once (default); deck = same sheet, only the current board lit; lesson = one board at a time with an outline at step 0. Readers can switch in the top toolbar."
+    },
+    "cols": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6,
+      "description": "Equal-cell column count for sheet mode; omit for auto 2–3"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number"
+        ]
+      },
+      "description": "Title strip at the bottom of the drawing sheet: a few short name/value pairs."
+    },
+    "section_cols": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "How many section boards sit side by side in a landscape node diagram (default 2, or 3 for 5+ sections)."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "nodes",
+        "edges"
+      ]
+    },
+    {
+      "required": [
+        "chart"
+      ]
+    }
+  ]
+}
